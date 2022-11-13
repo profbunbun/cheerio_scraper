@@ -1,5 +1,6 @@
+# Dependency directories
 node_modules/
 
-apppw.txt
+.apppw.txt
 
-credentials.json
+.credentials.json
