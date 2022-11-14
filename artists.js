@@ -1,71 +1,77 @@
 const process = require('process');
-var args = process.argv[2];
 var request = require('request');
 var cheerio = require('cheerio');
 var nodemailer = require("nodemailer");
-let jsonData = require('./credentials.json')
+let jsonData = require('./credentials.json');
+
 var Alist= new Array();
 var Tlist= new Array();
 var bodyPrep = new Array();
 var body;
 
 
+if (process.argv.length<=2){
+    console.log("Please Enter Artist!");
+    return;
+}else{
+    var args =process.argv.splice(2, process.argv.length - 1);
 request('https://www.popvortex.com/music/charts/top-rap-songs.php' , function (error, response, html) {
 	if (!error && response.statusCode == 200) {
         var $ = cheerio.load(html);
+    args.forEach((el)=>{
         
         $('p.title-artist').each(function(i, element) {
-        	var artist = $(this).children('em.artist').text();
-            var song = $(this).children('cite.title').text();
+        var artist = $(this).children('em.artist').text();
+        var song = $(this).children('cite.title').text();
 
-            if (artist.includes(args)){
-               // $(this).toArray();
-               
-                Alist.push(artist);
-                Tlist.push(song);
-                console.log(artist+ " " + song);
-                }
-            if ( i == 26){
-                return false;
-            }
-
-            
+        if (artist.includes(el)){
+          
            
-        });
+            Alist.push(artist);
+            Tlist.push(song);
+            console.log(artist+ " " + song);
+            }
+        if ( i == 26){
+            return false;
+        } 
+    });
+
+
+ });
+       
         
      
      
-     
+     if (Alist.length!=0){
      Alist.forEach((element,index) => {
             bodyPrep.push( "<b>"+element+"</b>"+" "+"<i>"+Tlist[index] +"</i><br>");
            }) ;
   
          body = bodyPrep.join('');  
 
-// async..await is not allowed in global scope, must use a wrapper
+
 async function main() {
-    // Generate test SMTP service account from ethereal.email
-    // Only needed if you don't have a real mail account for testing
     let testAccount = await nodemailer.createTestAccount();
-  
-    // create reusable transporter object using the default SMTP transport
     let transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 465,//587,
-      secure: true, // true for 465, false for other ports
+      port: 465,
+      secure: true, 
       auth: {
-        user: jsonData.sender_email, // generated ethereal user
-        pass: jsonData.sender_password, // generated ethereal password
+        user: jsonData.sender_email, 
+        pass: jsonData.sender_password, 
       },
     });
+
+    var subject= Alist.filter((element,index,array)=>{
+      return array.indexOf(element) === index;
+    });
  
-    // send mail with defined transport object
     let info = await transporter.sendMail({
-      from: jsonData.from + "👻" + '<'+jsonData.sender_email+'>', // sender address
-      to: jsonData.to, // list of receivers
-      subject: "Hello ✔", // Subject line
-      text: "Hello world?", // plain text body
-      html:body, // html body
+      from: jsonData.from + "👻" + '<'+jsonData.sender_email+'>', 
+      to: jsonData.to, 
+      subject: "Your artist(s) are: " + subject, 
+      text: "Hello world?", 
+      html:body, 
     });
   
     console.log("Message sent: %s", info.messageId);
@@ -79,11 +85,16 @@ async function main() {
   main().catch(console.error);
 
 
-
+}else{
+    console.log("Artist not found");
+    return;
+}
         
 	}
     
 });
+
+}
 
 
 
